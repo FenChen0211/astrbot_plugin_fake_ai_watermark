@@ -1,0 +1,11 @@
+"""插件常量定义"""
+
+PLUGIN_NAME = "astrbot_plugin_fake_ai_watermark"
+PLUGIN_VERSION = "v1.0.0"
+PLUGIN_AUTHOR = "AI Developer"
+PLUGIN_DESCRIPTION = "仿制AI水印处理插件"
+
+DOUBAN_ASPECT_RATIO = 8742 / 1660
+
+DEFAULT_MAX_IMAGE_SIZE = 10 * 1024 * 1024
+DEFAULT_PROCESSING_TIMEOUT = 30
