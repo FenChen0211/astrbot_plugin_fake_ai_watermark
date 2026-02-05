@@ -7,7 +7,7 @@ from typing import Optional
 
 from astrbot.api.event import filter, AstrMessageEvent
 from astrbot.core.star.filter.event_message_type import EventMessageType
-from astrbot.api.star import Context, Star, StarTools
+from astrbot.api.star import Context, Star, StarTools, register
 from astrbot.api import logger
 from astrbot.api import message_components as Comp
 
@@ -23,6 +23,7 @@ WATERMARK_COMMANDS = {
 }
 
 
+@register("仿制AI水印", "AI Developer", "仿制AI水印处理插件", "1.0.0")
 class FakeAIWatermarkPlugin(Star):
     """仿制AI水印处理插件"""
 
@@ -36,7 +37,8 @@ class FakeAIWatermarkPlugin(Star):
         try:
             self.gemini_opacity = context.config.get("gemini_opacity", 0.25)
             self.doubao_opacity = context.config.get("doubao_opacity", 0.7)
-        except (AttributeError, TypeError):
+        except (AttributeError, TypeError) as e:
+            logger.warning(f"读取配置失败，使用默认值: {e}")
             self.gemini_opacity = 0.25
             self.doubao_opacity = 0.7
 
@@ -44,6 +46,16 @@ class FakeAIWatermarkPlugin(Star):
         self.image_processor = ImageProcessor(self.watermark_dir)
 
         logger.info(f"仿制AI水印插件已加载 - Gemini透明度: {self.gemini_opacity}, 豆包透明度: {self.doubao_opacity}")
+
+    @staticmethod
+    def _extract_command(message_str: str) -> str:
+        """提取实际命令"""
+        if " @" in message_str:
+            return message_str.split("@", 1)[0].strip()
+        elif message_str.startswith("@"):
+            parts = message_str.split(None, 2)
+            return parts[1].strip() if len(parts) >= 2 else message_str
+        return message_str
 
     @filter.event_message_type(EventMessageType.ALL)
     async def handle_plain_commands(self, event: AstrMessageEvent):
@@ -53,14 +65,7 @@ class FakeAIWatermarkPlugin(Star):
         if message_str.startswith("/"):
             return
 
-        actual_command = message_str
-        if " @" in message_str:
-            parts = message_str.split("@", 1)
-            actual_command = parts[0].strip()
-        elif message_str.startswith("@"):
-            parts = message_str.split(None, 2)
-            if len(parts) >= 2:
-                actual_command = parts[1].strip()
+        actual_command = self._extract_command(message_str)
 
         if actual_command in WATERMARK_COMMANDS:
             watermark_type = WATERMARK_COMMANDS[actual_command]
@@ -83,14 +88,6 @@ class FakeAIWatermarkPlugin(Star):
                         if isinstance(reply_comp, Comp.Image):
                             return reply_comp.url or getattr(reply_comp, "file", None) or getattr(reply_comp, "data", {}).get("url")
         return None
-
-    async def _handle_gemini(self, event: AstrMessageEvent):
-        async for result in self._process_watermark(event, "gemini"):
-            yield result
-
-    async def _handle_doubao(self, event: AstrMessageEvent):
-        async for result in self._process_watermark(event, "doubao"):
-            yield result
 
     async def _process_watermark(self, event: AstrMessageEvent, watermark_type: str):
         output_path = None

@@ -1,6 +1,6 @@
 name: astrbot_plugin_fake_ai_watermark
 display_name: 仿制AI水印
 desc: 为图片添加仿制AI水印，支持Gemini和豆包两种风格
-version: v1.0.0
+version: v1.0.1
 author: FenChen0211
 repo: https://github.com/FenChen0211/astrbot-plugin-fake-ai-watermark
